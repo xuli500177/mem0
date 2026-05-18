@@ -1379,14 +1379,18 @@ class Memory(MemoryBase):
             entity_boosts = self._compute_entity_boosts(query_entities, filters)
 
         # Step 7: Build candidate set from semantic results
+        # pgvector returns cosine DISTANCE (lower = more similar).
+        # Convert to similarity (higher = better) for score_and_rank.
         candidates = []
         semantic_ids = set()
         for mem in semantic_results:
             mem_id = str(mem.id)
             semantic_ids.add(mem_id)
+            distance = mem.score if hasattr(mem, 'score') else 1.0
+            similarity = max(1.0 - distance, 0.0)
             candidates.append({
                 "id": mem_id,
-                "score": mem.score,
+                "score": similarity,
                 "payload": mem.payload if hasattr(mem, 'payload') else {},
             })
 
@@ -2813,14 +2817,18 @@ class AsyncMemory(MemoryBase):
             entity_boosts = await self._compute_entity_boosts_async(query_entities, filters)
 
         # Step 7: Build candidate set from semantic results
+        # pgvector returns cosine DISTANCE (lower = more similar).
+        # Convert to similarity (higher = better) for score_and_rank.
         candidates = []
         semantic_ids = set()
         for mem in semantic_results:
             mem_id = str(mem.id)
             semantic_ids.add(mem_id)
+            distance = mem.score if hasattr(mem, 'score') else 1.0
+            similarity = max(1.0 - distance, 0.0)
             candidates.append({
                 "id": mem_id,
-                "score": mem.score,
+                "score": similarity,
                 "payload": mem.payload if hasattr(mem, 'payload') else {},
             })
 
