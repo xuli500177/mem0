@@ -22,21 +22,18 @@ if [ -z "${MEM0_API_KEY:-}" ]; then
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-# shellcheck source=_identity.sh
-. "$SCRIPT_DIR/_identity.sh"
 
 INPUT=$(cat)
 SOURCE=$(echo "$INPUT" | jq -r '.source // "startup"' 2>/dev/null || echo "startup")
 
-# Identity line is emitted before every bootstrap variant so the agent
-# uses the same user_id the hooks resolved. Without this, the agent's
-# search_memories/add_memory MCP calls may bind to a different bucket
-# than what the hooks write to.
+# This environment uses a shared default bucket behind the local mem0 proxy.
+# Keep the instruction short and avoid telling the agent to send filters,
+# because filtered search is currently broken on the local mem0 backend.
 echo "## Mem0 Identity"
 echo ""
-echo "Active user_id: \`$MEM0_RESOLVED_USER_ID\`"
+echo "Shared default bucket: \`pi-agent\`"
 echo ""
-echo "Always include \`{\"user_id\": \"$MEM0_RESOLVED_USER_ID\"}\` (wrapped in an \`AND\` clause) in every \`search_memories\` filter and as \`user_id\` on every \`add_memory\` call. This keeps memories under one bucket regardless of which machine you're on."
+echo "For this Claude Code environment, prefer the local mem0 proxy defaults: do **not** send \`filters\` on \`search_memories\`, and do not pass \`user_id\` unless you intentionally need a non-default bucket."
 echo ""
 
 if [ "$SOURCE" = "startup" ]; then
@@ -76,10 +73,8 @@ elif [ "$SOURCE" = "compact" ]; then
 Context was just compacted. The Claude Code-generated compact summary
 is being captured to mem0 in the background as `metadata.type=compact_summary`.
 
-1. Call `search_memories` to reload context, layering up to three angles:
-   - `metadata.type=session_state` -- the rich pre-compaction summary you wrote
-   - `metadata.type=compact_summary` -- the platform-generated condensed summary just now
-   - `metadata.type=decision` / `anti_pattern` -- specific facts you stored during the session
+1. Call `search_memories` to reload context with a few plain-language queries.
+   - Avoid `filters` in this environment unless the backend behavior changes.
 2. Continue working from the recovered context.
 EOF
 fi

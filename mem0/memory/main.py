@@ -1380,13 +1380,28 @@ class Memory(MemoryBase):
 
         # Step 7: Build candidate set from semantic results
         candidates = []
+        semantic_ids = set()
         for mem in semantic_results:
             mem_id = str(mem.id)
+            semantic_ids.add(mem_id)
             candidates.append({
                 "id": mem_id,
                 "score": mem.score,
                 "payload": mem.payload if hasattr(mem, 'payload') else {},
             })
+
+        # Step 7b: Add BM25-only candidates (not in semantic results)
+        if keyword_results is not None:
+            for mem in keyword_results:
+                mem_id = str(mem.id) if hasattr(mem, 'id') else str(mem.get('id', ''))
+                if mem_id not in semantic_ids and mem_id in bm25_scores:
+                    payload = mem.payload if hasattr(mem, 'payload') else {}
+                    if payload.get("data"):
+                        candidates.append({
+                            "id": mem_id,
+                            "score": 0.0,
+                            "payload": payload,
+                        })
 
         # Step 8: Score and rank
         scored_results = score_and_rank(
@@ -2799,13 +2814,28 @@ class AsyncMemory(MemoryBase):
 
         # Step 7: Build candidate set from semantic results
         candidates = []
+        semantic_ids = set()
         for mem in semantic_results:
             mem_id = str(mem.id)
+            semantic_ids.add(mem_id)
             candidates.append({
                 "id": mem_id,
                 "score": mem.score,
                 "payload": mem.payload if hasattr(mem, 'payload') else {},
             })
+
+        # Step 7b: Add BM25-only candidates (not in semantic results)
+        if keyword_results is not None:
+            for mem in keyword_results:
+                mem_id = str(mem.id) if hasattr(mem, 'id') else str(mem.get('id', ''))
+                if mem_id not in semantic_ids and mem_id in bm25_scores:
+                    payload = mem.payload if hasattr(mem, 'payload') else {}
+                    if payload.get("data"):
+                        candidates.append({
+                            "id": mem_id,
+                            "score": 0.0,
+                            "payload": payload,
+                        })
 
         # Step 8: Score and rank
         scored_results = score_and_rank(

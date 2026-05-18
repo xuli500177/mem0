@@ -99,11 +99,12 @@ def score_and_rank(
             continue
 
         semantic_score = result.get("score", 0.0)
-        if semantic_score < threshold:
-            continue
-
         mem_id_str = str(mem_id)
         bm25_score = bm25_scores.get(mem_id_str, 0.0)
+
+        # Skip below-threshold candidates unless they have BM25 signal
+        if semantic_score < threshold and bm25_score <= 0:
+            continue
         entity_boost = entity_boosts.get(mem_id_str, 0.0)
 
         raw_combined = semantic_score + bm25_score + entity_boost

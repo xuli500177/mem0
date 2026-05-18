@@ -285,17 +285,21 @@ class PGVector(VectorStoreBase):
         filter_clause = sql.SQL("AND " + " AND ".join(filter_conditions)) if filter_conditions else sql.SQL("")
 
         try:
+            # Use OR logic to handle mixed-language queries (e.g. Chinese + English)
+            # plainto_tsquery uses AND which fails when Chinese tokens aren't split
+            terms = query.split()
+            ts_query = " | ".join(terms) if terms else query
             with self._get_cursor() as cur:
                 cur.execute(
                     sql.SQL("""
-                    SELECT id, ts_rank_cd(to_tsvector('simple', payload->>'text_lemmatized'), plainto_tsquery('simple', %s)) AS score, payload
+                    SELECT id, ts_rank_cd(to_tsvector('simple', payload->>'text_lemmatized'), to_tsquery('simple', %s)) AS score, payload
                     FROM {}
-                    WHERE to_tsvector('simple', payload->>'text_lemmatized') @@ plainto_tsquery('simple', %s)
+                    WHERE to_tsvector('simple', payload->>'text_lemmatized') @@ to_tsquery('simple', %s)
                     {}
                     ORDER BY score DESC
                     LIMIT %s
                     """).format(self._col(), filter_clause),
-                    (query, query, *filter_params, top_k),
+                    (ts_query, ts_query, *filter_params, top_k),
                 )
 
                 results = cur.fetchall()

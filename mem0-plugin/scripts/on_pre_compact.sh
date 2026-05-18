@@ -54,11 +54,12 @@ Tool call shape:
 ```
 add_memory(
   messages=[{"role":"user","content":"<the summary above>"}],
-  user_id="<the active user_id from the SessionStart bootstrap>",
   metadata={"type":"session_state","source":"pre-compaction"},
   infer=False,
 )
 ```
+
+Note: Do NOT pass `user_id` or `filters` — the local mem0 proxy routes to the shared `pi-agent` bucket by default.
 
 ### Step 2: Store any unstored learnings
 

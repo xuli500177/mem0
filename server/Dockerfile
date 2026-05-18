@@ -6,6 +6,9 @@ COPY requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Reranker 依赖 (可选)
+RUN pip install --no-cache-dir transformers torch sentencepiece
+
 COPY . .
 
 EXPOSE 8000

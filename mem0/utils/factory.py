@@ -18,6 +18,7 @@ from mem0.configs.rerankers.sentence_transformer import SentenceTransformerReran
 from mem0.configs.rerankers.zero_entropy import ZeroEntropyRerankerConfig
 from mem0.configs.rerankers.llm import LLMRerankerConfig
 from mem0.configs.rerankers.huggingface import HuggingFaceRerankerConfig
+from mem0.configs.rerankers.siliconflow import SiliconFlowRerankerConfig
 from mem0.embeddings.mock import MockEmbeddings
 
 
@@ -223,6 +224,7 @@ class RerankerFactory:
         "zero_entropy": ("mem0.reranker.zero_entropy_reranker.ZeroEntropyReranker", ZeroEntropyRerankerConfig),
         "llm_reranker": ("mem0.reranker.llm_reranker.LLMReranker", LLMRerankerConfig),
         "huggingface": ("mem0.reranker.huggingface_reranker.HuggingFaceReranker", HuggingFaceRerankerConfig),
+        "siliconflow": ("mem0.reranker.siliconflow_reranker.SiliconFlowReranker", SiliconFlowRerankerConfig),
     }
 
     @classmethod

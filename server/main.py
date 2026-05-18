@@ -121,6 +121,7 @@ DEFAULT_CONFIG = {
             "user": POSTGRES_USER,
             "password": POSTGRES_PASSWORD,
             "collection_name": POSTGRES_COLLECTION_NAME,
+            "embedding_model_dims": 1024,  # BGE-M3 dimensions
         },
     },
     "llm": {
@@ -194,6 +195,7 @@ class SearchRequest(BaseModel):
     filters: Optional[Dict[str, Any]] = None
     top_k: Optional[int] = Field(None, description="Maximum number of results to return.")
     threshold: Optional[float] = Field(None, description="Minimum similarity score for results.")
+    rerank: bool = Field(False, description="Enable reranking with configured reranker.")
 
 
 class GenerateInstructionsRequest(BaseModel):
@@ -417,6 +419,13 @@ def search_memories(search_req: SearchRequest, _auth=Depends(verify_auth)):
     """Search for memories based on a query."""
     try:
         params = {k: v for k, v in search_req.model_dump().items() if v is not None and k != "query"}
+        # Newer mem0 SDK requires entity params (user_id, agent_id, run_id) inside filters
+        entity_keys = {"user_id", "agent_id", "run_id"}
+        entity_params = {k: params.pop(k) for k in entity_keys if k in params}
+        if entity_params:
+            filters = params.pop("filters", None) or {}
+            filters.update(entity_params)
+            params["filters"] = filters
         return get_memory_instance().search(query=search_req.query, **params)
     except Exception:
         raise upstream_error()

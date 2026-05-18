@@ -25,19 +25,25 @@ if [ "$STOP_HOOK_ACTIVE" = "true" ]; then
   exit 0
 fi
 
-cat <<'EOF'
+REASON=$(cat <<'EOF'
 Before finishing, check if there are important learnings from this interaction that should be persisted using the mem0 `add_memory` tool:
 
-1. Were any significant decisions made? -> Store with metadata `{"type": "decision"}`
-2. Were any new patterns or strategies discovered? -> Store with metadata `{"type": "task_learning"}`
-3. Did any approach fail? -> Store with metadata `{"type": "anti_pattern"}`
-4. Did you learn anything about the user's preferences? -> Store with metadata `{"type": "user_preference"}`
-5. Were there environment/setup discoveries? -> Store with metadata `{"type": "environmental"}`
+Only write a memory if it is genuinely useful in a future session. Do not store a memory on every turn; keep the bar high and skip if the note would be redundant, transient, or unlikely to matter later.
+
+- decisions -> `{"type": "decision"}`
+- strategies that worked -> `{"type": "task_learning"}`
+- failed approaches -> `{"type": "anti_pattern"}`
+- user preferences -> `{"type": "user_preference"}`
+- environment/setup discoveries -> `{"type": "environmental"}`
+- conventions -> `{"type": "convention"}`
 
 Memories can be as detailed as needed — include full context, reasoning, code snippets, file paths, and examples. Longer, searchable memories are more valuable than vague one-liners.
 
 If nothing notable happened in this interaction, it's fine to skip. Only store genuinely useful learnings.
 EOF
+)
+
+echo "$REASON"
 
 # Capture transcript state in the background via Mem0 REST API
 echo "$INPUT" | python3 "$SCRIPT_DIR/on_pre_compact.py" --source=session-end 2>/dev/null &
