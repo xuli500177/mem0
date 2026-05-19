@@ -31,7 +31,9 @@ def _headers():
 @mcp.tool()
 def add_memory(text: str, user_id: str = "", infer: bool = True) -> str:
     """Add a new memory. Store user preferences, decisions, or any useful information."""
-    uid = user_id or DEFAULT_USER_ID
+    # Always use DEFAULT_USER_ID — ignore caller-supplied user_id to prevent
+    # bucket fragmentation (e.g. Codex passing session IDs as user_id).
+    uid = DEFAULT_USER_ID
     payload = {"messages": [{"role": "user", "content": text}], "user_id": uid, "infer": infer}
     with httpx.Client(timeout=30) as c:
         r = c.post(f"{MEM0_API_URL}/memories", json=payload, headers=_headers())
@@ -48,8 +50,8 @@ def add_memory(text: str, user_id: str = "", infer: bool = True) -> str:
 def search_memories(query: str, user_id: str = "", limit: int = 20, filters: dict = None) -> str:
     """Search stored memories by query. Returns matching memories with scores.
     PRO TIP: Use Query Expansion. Provide bilingual synonyms in the query (e.g., '手机语音 phone voice input') to maximize retrieval success."""
-    uid = user_id or DEFAULT_USER_ID
-    
+    uid = DEFAULT_USER_ID
+
     # Auto-expand query for BM25 to handle paths and hyphenated terms gracefully
     cleaned_query = re.sub(r'[\-_\\/]', ' ', query)
     if cleaned_query != query and cleaned_query.strip():
@@ -82,7 +84,7 @@ def search_memories(query: str, user_id: str = "", limit: int = 20, filters: dic
 @mcp.tool()
 def get_memories(user_id: str = "", limit: int = 100) -> str:
     """List all stored memories for the user."""
-    uid = user_id or DEFAULT_USER_ID
+    uid = DEFAULT_USER_ID
     with httpx.Client(timeout=30) as c:
         r = c.get(f"{MEM0_API_URL}/memories", params={"user_id": uid, "limit": limit}, headers=_headers())
         r.raise_for_status()
@@ -132,7 +134,7 @@ def delete_memory(memory_id: str) -> str:
 @mcp.tool()
 def delete_all_memories(user_id: str = "") -> str:
     """Delete all memories for the user."""
-    uid = user_id or DEFAULT_USER_ID
+    uid = DEFAULT_USER_ID
     with httpx.Client(timeout=30) as c:
         r = c.delete(f"{MEM0_API_URL}/memories", params={"user_id": uid}, headers=_headers())
         r.raise_for_status()
