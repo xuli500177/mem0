@@ -70,19 +70,22 @@ class SiliconFlowReranker(BaseReranker):
                 score = r.get("relevance_score", 0.0)
                 score_map[idx] = float(score)
 
-            # Normalize if requested
-            if self.config.normalize and score_map:
-                scores = list(score_map.values())
-                min_s, max_s = min(scores), max(scores)
-                rng = max_s - min_s
-                if rng > 0:
-                    score_map = {k: (v - min_s) / rng for k, v in score_map.items()}
+            # Filter by absolute relevance threshold.
+            # Raw scores below this are noise (e.g., 0.003 for completely
+            # unrelated content). bge-reranker-v2-m3 raw scores are already
+            # in [0, 1] and have absolute meaning: >0.3 is relevant,
+            # <0.05 is noise. When filtering is active, skip min-max
+            # normalization to preserve this absolute signal.
+            min_relevance = getattr(self.config, "min_relevance", 0.1)
+            score_map = {k: v for k, v in score_map.items() if v >= min_relevance}
 
-            # Build reranked list
+            # Build reranked list (only include results that passed threshold)
             doc_score_pairs = []
             for i, doc in enumerate(documents):
+                if i not in score_map:
+                    continue
                 reranked_doc = doc.copy()
-                reranked_doc["rerank_score"] = score_map.get(i, 0.0)
+                reranked_doc["rerank_score"] = score_map[i]
                 doc_score_pairs.append((reranked_doc, reranked_doc["rerank_score"]))
 
             doc_score_pairs.sort(key=lambda x: x[1], reverse=True)
