@@ -35,7 +35,7 @@ def add_memory(text: str, user_id: str = "", infer: bool = True) -> str:
     # bucket fragmentation (e.g. Codex passing session IDs as user_id).
     uid = DEFAULT_USER_ID
     payload = {"messages": [{"role": "user", "content": text}], "user_id": uid, "infer": infer}
-    with httpx.Client(timeout=30) as c:
+    with httpx.Client(timeout=120) as c:
         r = c.post(f"{MEM0_API_URL}/memories", json=payload, headers=_headers())
         r.raise_for_status()
         data = r.json()
@@ -60,8 +60,10 @@ def search_memories(query: str, user_id: str = "", limit: int = 20, filters: dic
     payload = {"query": query, "user_id": uid, "limit": limit}
     if ENABLE_RERANK:
         payload["rerank"] = True
-    if filters:
-        payload["filters"] = filters
+    # NOTE: filters intentionally ignored — mem0 backend has operator parsing
+    # bugs (e.g. "type" treated as operator). Plain query + rerank is more reliable.
+    # if filters:
+    #     payload["filters"] = filters
     with httpx.Client(timeout=120) as c:
         r = c.post(f"{MEM0_API_URL}/search", json=payload, headers=_headers())
         r.raise_for_status()
