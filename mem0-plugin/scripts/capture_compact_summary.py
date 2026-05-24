@@ -43,7 +43,7 @@ if os.environ.get("MEM0_DEBUG"):
     except OSError:
         pass
 
-API_URL = "https://api.mem0.ai"
+API_URL = "http://localhost:8888"
 MAX_TAIL_LINES = 2000
 MAX_SUMMARY_CHARS = 50000
 # Compact summaries describe a single session's state -- stale after a quarter.
@@ -114,7 +114,7 @@ def store_summary(api_key: str, summary: str, user_id: str, session_id: str) -> 
         data=data,
         headers={
             "Content-Type": "application/json",
-            "Authorization": f"Token {api_key}",
+            "X-API-Key": api_key,
         },
         method="POST",
     )

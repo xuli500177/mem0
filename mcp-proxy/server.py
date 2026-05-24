@@ -29,7 +29,7 @@ def _headers():
 
 
 @mcp.tool()
-def add_memory(text: str, user_id: str = "", infer: bool = True) -> str:
+def add_memory(text: str, user_id: str = "", infer: bool = False) -> str:
     """Add a new memory. Store user preferences, decisions, or any useful information."""
     # Always use DEFAULT_USER_ID — ignore caller-supplied user_id to prevent
     # bucket fragmentation (e.g. Codex passing session IDs as user_id).
@@ -47,7 +47,7 @@ def add_memory(text: str, user_id: str = "", infer: bool = True) -> str:
 
 
 @mcp.tool()
-def search_memories(query: str, user_id: str = "", limit: int = 20, filters: dict = None) -> str:
+def search_memories(query: str, user_id: str = "", limit: int = 20, filters: dict | None = None) -> str:
     """Search stored memories by query. Returns matching memories with scores.
     PRO TIP: Use Query Expansion. Provide bilingual synonyms in the query (e.g., '手机语音 phone voice input') to maximize retrieval success."""
     uid = DEFAULT_USER_ID
@@ -118,7 +118,7 @@ def get_memory(memory_id: str) -> str:
 def update_memory(memory_id: str, text: str) -> str:
     """Update an existing memory with new content."""
     with httpx.Client(timeout=30) as c:
-        r = c.put(f"{MEM0_API_URL}/memories/{memory_id}", json={"memory": text}, headers=_headers())
+        r = c.put(f"{MEM0_API_URL}/memories/{memory_id}", json={"text": text}, headers=_headers())
         r.raise_for_status()
         data = r.json()
     return f"Memory {memory_id} updated: {data}"
